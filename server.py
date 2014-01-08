@@ -1,7 +1,20 @@
-from twisted.web.proxy import Proxy, ProxyRequest
+#!/usr/bin/env python
+
 from twisted.internet.protocol import Protocol, ClientFactory
-import urlparse
+from twisted.web.proxy import Proxy, ProxyRequest
 from twisted.python import log
+
+import urlparse
+import random
+
+PROXY_PORT = 8888
+PROXY_LIST = [
+    ('proxy-ip-1', 8080),
+    ('proxy-ip-2', 8080),
+    ('proxy-ip-3', 8080),
+    ('proxy-ip-4', 8080),
+    ('proxy-ip-4', 8080)
+]
 
 
 class ConnectProxyRequest(ProxyRequest):
@@ -19,7 +32,7 @@ class ConnectProxyRequest(ProxyRequest):
         self.setResponseCode(501, message)
         self.responseHeaders.addRawHeader("Content-Type", "text/html")
         self.write(body)
-        self.finish()                                
+        self.finish()
 
     def splitHostPort(self, hostport, default_port):
         port = default_port
@@ -42,7 +55,8 @@ class ConnectProxyRequest(ProxyRequest):
                       "Unable to parse port from URI: %s" % repr(self.uri))
             return
 
-        clientFactory = ConnectProxyClientFactory(host, port, self)
+        balance_host, balance_port = random.sample(PROXY_LIST, 1)[0]
+        clientFactory = ConnectProxyClientFactory(balance_host, balance_port, self)
 
         # TODO provide an API to set proxy connect timeouts
         self.reactor.connectTCP(host, port, clientFactory)
